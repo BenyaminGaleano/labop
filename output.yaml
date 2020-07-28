@@ -1,0 +1,18 @@
+# Archivo para configuración de salida
+# autor: Josué Galeano
+
+# Este archivo es leido por un lexer y parser de YAML por lo que
+# hay que regirse al lenguaje tome en cuenta esto:
+
+# IMPORTANTE
+# - Después de una etiqueta deje un espacio (Las tabulaciones no están permitidas)
+#   llave: valor
+# - No es necesario poner comillas, pero si usar ":" para algún campo, 
+#   encierre su texto en comillas simples o dobles de lo contrario no importa
+
+# si es verdadero rellenará con 0s las casillas
+fill: true
+
+# comentario que se colocará al final de la evaluación
+# a todos los alumnos que no hayan sido calificados
+comment: No entregó
