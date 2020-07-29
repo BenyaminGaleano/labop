@@ -10,14 +10,17 @@
 # - No es necesario poner comillas, pero si usar ":" para algún campo, 
 #   encierre su texto en comillas simples o dobles de lo contrario no importa
 
-# es el número de fila donde a) #P ... (ignorando la cabecera)
-startline: 6
+# es el número de fila donde empiezan los datos
+startline: 7
 
 # es el número de columna donde se encuentra el carnet
 idCol: 2
 
+# plantilla de celda de puntos
+scheme: "*) *P"
+
 # número de ejercicios 
 exercises: 5
 
-# plantilla de celda de puntos
-scheme: "*) *P"
+# cantidad de ejercicios por sección
+partitions: 2 2 1

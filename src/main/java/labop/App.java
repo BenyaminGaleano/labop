@@ -4,9 +4,17 @@
 package labop;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Scanner;
 import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import labop.config.ConfigParser;
 import labop.csv.CSVWatcher;
@@ -17,18 +25,99 @@ public class App {
 	private Display display;
 	private Scanner scan;
 	private AppMode mode;
+	private StringBuilder logBuilder;
 
 	private App(Display display, Scanner scan, AppMode mode) {
 		this.display = display;
 		this.scan = scan;
 		this.mode = mode;
+		this.logBuilder = new StringBuilder();
 	}
 
-	private void linear(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios) {
-		display.msg(input.settings.get("scheme", String.class));
+	private void recoveryLinear(File log, LinkedList<Section> trace) {
+		try {
+			Scanner reader = new Scanner(log);
+			// comentario <#> punteo
+			String aux = "";
+			reader.nextLine();
+			for (Section section : trace) {
+				if(!reader.hasNext()) break;
+				aux = reader.nextLine();
+				if(aux.isEmpty()) break;
+				section.set(Integer.parseInt(aux.split("<#>")[1].trim()), aux.split("<#>")[0].trim());
+			}
+			reader.close();
+		} catch (FileNotFoundException e) {
+			display.error("no se pudo leer el log");
+		}
 	}
 
-	private void search(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios) {
+	private void writeLog(File log, Object object) {
+		logBuilder.append(object);
+		logBuilder.append('\n');
+		try {
+			FileOutputStream out = new FileOutputStream(log);
+			out.write(logBuilder.toString().getBytes("ISO-8859-1"));
+			out.close();
+		} catch (IOException e) {
+			display.error("no se pudo escribir LOG");
+		}
+	}
+
+	private void linear(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios, LinkedList<Section> trace) {
+		final ConfigParser inconf = input.settings;
+		final ConfigParser outconf = notas.settings;
+		AtomicInteger count = new AtomicInteger();
+		File log = new File("input/log.log");
+		AtomicInteger start = new AtomicInteger();
+
+		if (log.exists()) {
+			recoveryLinear(log, trace);
+			try {
+				Scanner reader = new Scanner(log);
+				start.set(reader.nextInt());
+				reader.close();
+			} catch (FileNotFoundException e) {
+				display.error("No se pudo recuperar el estado :c");
+			}
+		} 
+		
+		input.consumeCSVs((row) -> {
+			if (count.incrementAndGet() < start.get()) return;
+			logBuilder.delete(0, logBuilder.length());
+			writeLog(log, count.get());
+
+			display.show("\n\nAlumno: "+row.get(inconf.get("idCol", Integer.class)-1)+"\n", Display.YELLOW);
+			trace.forEach((section) -> {
+				display.show("\nEjercicio: "+section.name+"\nvalor: "+section.points + "\n", Display.YELLOW);
+				display.show("\n// ", Display.BLUE);
+				String comentario = scan.nextLine();
+				display.show("P: ", Display.BLUE);
+				int points = scan.nextInt();
+				scan.nextLine();
+				section.total = points;
+				section.comment = comentario;
+				writeLog(log, comentario+"<#>"+points);
+			});
+			notas.writeRow(count.get(), trace.stream().map(section -> {
+				return section.total + "";
+			}).collect(Collectors.toCollection(LinkedList::new)));
+			String aux = "";
+			for (Section section : trace) {
+				if(section.comment.trim().isEmpty()) continue;
+				aux += section.name +") "+section.comment+" ";
+			}
+
+			String commto = "\""+aux.trim()+"\"";
+			comentarios.writeRow(count.get(), new LinkedList<String>(){
+				private static final long serialVersionUID = 1L;
+				{add(commto);}});
+			notas.rewrite();
+			comentarios.rewrite();
+		});
+	}
+
+	private void search(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios, LinkedList<Section> trace) {
 		display.msg("Modo Busqueda Activo");
 	}
 
@@ -52,10 +141,21 @@ public class App {
 		}
 
 		CSVWatcher input = new CSVWatcher(inconf, infile.listFiles((file, fname) -> fname.matches(".*\\.csv")));
-		int width = inconf.get("exercises", Integer.class);
-		int height = input.csvs.firstEntry().getValue().size() - inconf.get("startline", Integer.class);
-		CSVWatcher notas = new CSVWatcher(outconf, new File("output/notas.csv"), width, height);
-		CSVWatcher comments = new CSVWatcher(outconf, new File("output/comentarios.csv"), width, height);
+
+		File notf = new File("output/notas.csv");
+		File comf = new File("output/comentarios.csv");
+		CSVWatcher notas = null;
+		CSVWatcher comments = null;
+
+		if (!notf.exists()) {
+			int width = inconf.get("exercises", Integer.class);
+			int height = input.csvs.firstEntry().getValue().size() - (inconf.get("startline", Integer.class)+1);
+			notas = new CSVWatcher(outconf, notf, width, height);
+			comments = new CSVWatcher(outconf, comf, 1, height);
+		} else {
+			notas = new CSVWatcher(outconf, notf);
+			comments = new CSVWatcher(outconf, comf);
+		}
 
 		String delimiter1 = inconf.get("scheme", String.class);
 		String delimiter2 = delimiter1.split("\\*")[2].trim();
@@ -67,13 +167,33 @@ public class App {
 		int endpoint, startpoint;
 		String name = null;
 		int points = 0;
-		for (String celda : input.csvs.firstEntry().getValue().get(inconf.get("startline", Integer.class)-1)) {
+
+		ConcurrentLinkedQueue<Integer> mul = new ConcurrentLinkedQueue<>();
+
+		for (String mult : inconf.get("partitions", String.class).split(" ")) {
+			mul.add(Integer.parseInt(mult));
+		}
+
+		ConcurrentLinkedQueue<String> sections = new ConcurrentLinkedQueue<>();
+		for (String celda : input.csvs.firstEntry().getValue().get(inconf.get("startline", Integer.class)-4)) {
+			if (countId++ >= inconf.get("idCol", Integer.class) && countId < inconf.get("idCol", Integer.class)+inconf.get("exercises", Integer.class)+1) {
+				if (!celda.trim().isEmpty()) {
+					for (int i = 0, aux = mul.poll(); i < aux; i++) {
+						sections.add(celda.trim());
+					}
+				}
+			}
+		}
+
+		countId = 0;
+
+		for (String celda : input.csvs.firstEntry().getValue().get(inconf.get("startline", Integer.class)-2)) {
 			if (countId++ >= inconf.get("idCol", Integer.class) && countId < inconf.get("idCol", Integer.class)+inconf.get("exercises", Integer.class)+1) {
 				endpoint = 0;
 				startpoint = 0;
 				for (; endpoint < celda.length(); endpoint++) {
 					if (celda.charAt(endpoint) == delimiter1.charAt(0)) {
-						name = celda.substring(startpoint, endpoint).trim();
+						name = sections.poll() +"-"+celda.substring(startpoint, endpoint).trim();
 						startpoint = endpoint+1;
 					} else if (celda.charAt(endpoint) == delimiter2.charAt(0)) {
 						points = Integer.parseInt(celda.substring(startpoint, endpoint).trim());
@@ -83,15 +203,20 @@ public class App {
 			}
 		}
 
-		System.out.println(trace);
+		display.inf("el prefijo // es para comentarios y el prefijo P: es para el puntaje");
+		display.inf("el prefijo # indica consola utilice los siguientes comandos:");
+		display.show("goto SECCIÓN (indique el nombre a la seccion a la que quiere saltar)\n", Display.GREEN);
+		display.show("prev (ir al ejercicio previo)}\n", Display.GREEN);
+		display.show("next (ir al siguiente)\n", Display.GREEN);
+		display.show("(presione enter para no proseguir)", Display.GREEN);
 
 		switch (mode) {
 			case linear:
-				linear(input, notas, comments);
+				linear(input, notas, comments, trace);
 				break;
 		
 			case search:
-				search(input, notas, comments);
+				search(input, notas, comments, trace);
 				break;
 		}
 	}
@@ -147,14 +272,28 @@ enum AppMode { linear, search }
 class Section {
 	final int points;
 	final String name;
+	int total;
+	String comment;
 
 	public Section(int points, String name) {
 		this.points = points;
 		this.name = name;
+		this.total = 0;
+		this.comment = "";
+	}
+
+	public void reset() {
+		this.total = 0;
+		this.comment = "";
+	}
+
+	public void set(int total, String comment) {
+		this.total = total;
+		this.comment = comment;
 	}
 
 	@Override
 	public String toString() {
-		return "N: " + name + " P: " + points;
+		return "N: " + name + " P: " + points + " T:" + total;
 	}
 }

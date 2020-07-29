@@ -10,6 +10,9 @@
 # - No es necesario poner comillas, pero si usar ":" para algún campo, 
 #   encierre su texto en comillas simples o dobles de lo contrario no importa
 
+# para que funcione CSVWatcher
+startline: 1
+
 # si es verdadero rellenará con 0s las casillas
 fill: true
 

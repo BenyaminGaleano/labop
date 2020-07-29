@@ -78,6 +78,11 @@ public class CSVWatcher {
                 buff.append(current);
             }
         }
+
+        if (buff.length() > 0) {
+            words.add(buff.toString());
+        }
+
         scan.close();
         if (words.size() > max.get()) {
             max.set(words.size());
@@ -189,6 +194,14 @@ public class CSVWatcher {
             result.add(col, data.get(k));
         }
         return result.get(settings.get(colName, Integer.class)-1);
+    }
+
+    public void writeRow(int num, LinkedList<String> row) {
+        LinkedList<LinkedList<String>> table = csvs.firstEntry().getValue();
+        LinkedList<String> rowtable = table.get(num-1);
+        for(int i = 0; i < row.size() && i < rowtable.size(); i++) {
+            rowtable.set(i, row.get(i));
+        }
     }
 
     public void rewrite() {
