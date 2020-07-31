@@ -19,6 +19,7 @@ import labop.config.ConfigParser;
 public class CSVWatcher {
     public final TreeMap<File, LinkedList<LinkedList<String>>> csvs;
     public final ConfigParser settings;
+    public int lastvisit = 0;
 
     /*
      * Si usa este constructor tenga cuidado con la función de consumo ya que en
@@ -168,6 +169,7 @@ public class CSVWatcher {
             for(int i = start; i < csv.size(); i++){
                 row = csv.get(i);
                 if(row.size()>col && row.get(col).replaceAll("\"", "").replaceAll("'", "").trim().equals(key.replaceAll("\"", "").replaceAll("'", "").trim())){
+                    this.lastvisit = i;
                     return row;
                 }
             }
