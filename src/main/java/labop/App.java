@@ -64,6 +64,36 @@ public class App {
 		}
 	}
 
+	private void writeAndConfirm(ConfigParser inconf, CSVWatcher notas, CSVWatcher comentarios, AtomicInteger count, LinkedList<Section> trace, LinkedList<String> row) {
+		notas.writeRow(count.get(), trace.stream().map(sec -> {
+			return sec.total + "";
+		}).collect(Collectors.toCollection(LinkedList::new)));
+		String aux = "";
+		for (Section sec : trace) {
+			if (sec.comment.trim().isEmpty())
+				continue;
+			aux += sec.name + ") " + sec.comment + " ";
+		}
+
+		String commto = "\"" + aux.trim() + "\"";
+		comentarios.writeRow(count.get(), new LinkedList<String>() {
+			private static final long serialVersionUID = 1L;
+			{
+				add(commto);
+			}
+		});
+
+		display.show("Alumno: " + row.get(inconf.get("idCol", Integer.class) - 1) + " Nota: " + trace.stream().map((sc)-> sc.total).reduce((a,b)->a+b).orElseGet(()->0) + "\n", Display.GREEN);
+
+		notas.rewrite();
+		comentarios.rewrite();
+		trace.forEach(sec -> {
+			sec.reset();
+		});
+		display.show("\n(enter)", Display.RESET);
+		scan.nextLine();
+	}
+
 	private void linear(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios, LinkedList<Section> trace) {
 		final ConfigParser inconf = input.settings;
 		final ConfigParser outconf = notas.settings;
@@ -181,9 +211,7 @@ public class App {
 							String content = command.trim().split(" ")[1];
 							int nota = 0;
 							if (content.toLowerCase().equals("max")) {
-								notas.writeRow(count.get(), trace.stream().map(sec -> {
-									return sec.points + "";
-								}).collect(Collectors.toCollection(LinkedList::new)));
+								trace.forEach((sec) -> sec.total = sec.points);
 							} else {
 								try {
 									nota = Integer.parseInt(content);
@@ -192,9 +220,7 @@ public class App {
 									continue readcommand;
 								}
 								final int nota00 =  nota;
-								notas.writeRow(count.get(), trace.stream().map(sec -> {
-									return nota00 + "";
-								}).collect(Collectors.toCollection(LinkedList::new)));
+								trace.forEach((sec) -> sec.total = nota00);
 							}
 
 							display.show("// ", Display.BLUE);
@@ -207,8 +233,16 @@ public class App {
 									add(commto);
 								}
 							});
+							notas.writeRow(count.get(), trace.stream().map(sec -> {
+								return sec.total + "";
+							}).collect(Collectors.toCollection(LinkedList::new)));
+							display.show("Alumno: " + row.get(inconf.get("idCol", Integer.class) - 1) + " Nota: " + trace.stream().map((sc)-> sc.total).reduce((a,b)->a+b).orElseGet(()->0) + "\n", Display.GREEN);
+							trace.forEach((sec) -> sec.reset());
+
 							notas.rewrite();
 							comentarios.rewrite();
+							display.show("\n(enter)", Display.RESET);
+							scan.nextLine();
 							return;
 
 						case "":
@@ -232,33 +266,7 @@ public class App {
 				writeLog(log);
 			}
 
-			notas.writeRow(count.get(), trace.stream().map(sec -> {
-				return sec.total + "";
-			}).collect(Collectors.toCollection(LinkedList::new)));
-			String aux = "";
-			for (Section sec : trace) {
-				if (sec.comment.trim().isEmpty())
-					continue;
-				aux += sec.name + ") " + sec.comment + " ";
-			}
-
-			String commto = "\"" + aux.trim() + "\"";
-			comentarios.writeRow(count.get(), new LinkedList<String>() {
-				private static final long serialVersionUID = 1L;
-				{
-					add(commto);
-				}
-			});
-
-			display.show("Alumno: " + row.get(inconf.get("idCol", Integer.class) - 1) + " Nota: " + trace.stream().map((sc)-> sc.total).reduce((a,b)->a+b).orElseGet(()->0) + "\n", Display.GREEN);
-
-			notas.rewrite();
-			comentarios.rewrite();
-			trace.forEach(sec -> {
-				sec.reset();
-			});
-			display.show("\n(enter)", Display.RESET);
-			scan.nextLine();
+			writeAndConfirm(inconf, notas, comentarios, count, trace, row);
 		});
 	}
 
@@ -294,7 +302,7 @@ public class App {
 				return;
 			
 			if (backup.get()) {
-				row = input.csvs.firstEntry().getValue().get(inconf.get("startline", Integer.class) - 1 + start.get());
+				row = input.csvs.firstEntry().getValue().get(inconf.get("startline", Integer.class) - 2 + start.get());
 				count.set(start.get());
 				backup.set(false);
 			} else {
@@ -309,11 +317,11 @@ public class App {
 					count.set(input.lastvisit -  inconf.get("startline", Integer.class) + 2);
 				} else {
 					row = input.csvs.firstEntry().getValue().getFirst();
+					count.set(1);
 				}
 			}
 			
 			logBuilder.studentLine = count.get();
-			writeLog(log);
 
 			display.show("\n\nAlumno: " + row.get(inconf.get("idCol", Integer.class) - 1) + "\n", Display.YELLOW);
 
@@ -401,9 +409,7 @@ public class App {
 							String content = command.trim().split(" ")[1];
 							int nota = 0;
 							if (content.toLowerCase().equals("max")) {
-								notas.writeRow(count.get(), trace.stream().map(sec -> {
-									return sec.points + "";
-								}).collect(Collectors.toCollection(LinkedList::new)));
+								trace.forEach((sec) -> sec.total = sec.points);
 							} else {
 								try {
 									nota = Integer.parseInt(content);
@@ -412,9 +418,7 @@ public class App {
 									continue readcommand;
 								}
 								final int nota00 =  nota;
-								notas.writeRow(count.get(), trace.stream().map(sec -> {
-									return nota00 + "";
-								}).collect(Collectors.toCollection(LinkedList::new)));
+								trace.forEach((sec) -> sec.total = nota00);
 							}
 
 							display.show("// ", Display.BLUE);
@@ -427,8 +431,16 @@ public class App {
 									add(commto);
 								}
 							});
+							notas.writeRow(count.get(), trace.stream().map(sec -> {
+								return sec.total + "";
+							}).collect(Collectors.toCollection(LinkedList::new)));
+							display.show("Alumno: " + row.get(inconf.get("idCol", Integer.class) - 1) + " Nota: " + trace.stream().map((sc)-> sc.total).reduce((a,b)->a+b).orElseGet(()->0) + "\n", Display.GREEN);
+							trace.forEach((sec) -> sec.reset());
+							log.delete();
 							notas.rewrite();
 							comentarios.rewrite();
+							display.show("\n(enter)", Display.RESET);
+							scan.nextLine();
 							continue search;
 
 						case "":
@@ -452,34 +464,8 @@ public class App {
 				writeLog(log);
 			}
 
-			notas.writeRow(count.get(), trace.stream().map(sec -> {
-				return sec.total + "";
-			}).collect(Collectors.toCollection(LinkedList::new)));
-			String aux = "";
-			for (Section sec : trace) {
-				if (sec.comment.trim().isEmpty())
-					continue;
-				aux += sec.name + ") " + sec.comment + " ";
-			}
-
-			String commto = "\"" + aux.trim() + "\"";
-			comentarios.writeRow(count.get(), new LinkedList<String>() {
-				private static final long serialVersionUID = 1L;
-				{
-					add(commto);
-				}
-			});
-			
+			writeAndConfirm(inconf, notas, comentarios, count, trace, row);
 			log.delete();
-			display.show("Alumno: " + row.get(inconf.get("idCol", Integer.class) - 1) + " Nota: " + trace.stream().map((sc)-> sc.total).reduce((a,b)->a+b).orElseGet(()->0) + "\n", Display.GREEN);
-
-			notas.rewrite();
-			comentarios.rewrite();
-			trace.forEach(sec -> {
-				sec.reset();
-			});
-			display.show("\n(enter)", Display.RESET);
-			scan.nextLine();
 		}
 	}
 
