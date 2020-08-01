@@ -130,10 +130,8 @@ public class CSVWatcher {
             /* Fin Lecturas */
 
             in.close();
-            if (buff.length() != 0) {
-                result.add(parserLine(buff.toString(), max));
-                buff.delete(0, buff.length());
-            }
+            result.add(parserLine(buff.toString(), max));
+            buff.delete(0, buff.length());
             for (int i = settings.get("startline", Integer.class) - 1; i < result.size(); i++) {
                 for (int ii = result.get(i).size(); ii < max.get(); ii++) {
                     result.get(i).add("");

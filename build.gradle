@@ -39,7 +39,7 @@ distZip {
     into(project.name) {
         from './'
         include '*.yaml'
-        include 'LEEME.txt'
+        include 'LEEME.pdf'
     }
 }
 

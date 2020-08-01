@@ -257,6 +257,8 @@ public class App {
 			trace.forEach(sec -> {
 				sec.reset();
 			});
+			display.show("\n(enter)", Display.RESET);
+			scan.nextLine();
 		});
 	}
 
@@ -300,8 +302,10 @@ public class App {
 				String carnet = scan.nextLine();
 				if ( !carnet.isEmpty() ) {
 					row = input.search("idCol", carnet);
-					if (row == null)
+					if (row == null){
+						display.warning("No existe ningún estudiante asociado con ese carnet");
 						continue search;
+					}
 					count.set(input.lastvisit -  inconf.get("startline", Integer.class) + 2);
 				} else {
 					row = input.csvs.firstEntry().getValue().getFirst();
@@ -474,6 +478,8 @@ public class App {
 			trace.forEach(sec -> {
 				sec.reset();
 			});
+			display.show("\n(enter)", Display.RESET);
+			scan.nextLine();
 		}
 	}
 
@@ -507,7 +513,7 @@ public class App {
 			int width = inconf.get("exercises", Integer.class);
 			int height = input.csvs.firstEntry().getValue().size() - (inconf.get("startline", Integer.class) - 1);
 			notas = new CSVWatcher(outconf, notf, width, height);
-			comments = new CSVWatcher(outconf, comf, 1, height+1);
+			comments = new CSVWatcher(outconf, comf, 1, height);
 		} else {
 			notas = new CSVWatcher(outconf, notf);
 			comments = new CSVWatcher(outconf, comf);
@@ -569,6 +575,7 @@ public class App {
 		display.show("next (ir al siguiente)\n", Display.GREEN);
 		display.show("exit (sale del estudiante y se pierden los datos)\n", Display.GREEN);
 		display.show("close (para el programa)\n", Display.GREEN);
+		display.show("set NOTA (califica todas las secciones con esa nota, set max con la máxima nota por sección)\n", Display.GREEN);
 		display.show("finish (se terminó de calificar - modo búsqueda\n", Display.GREEN);
 		display.show("(presione enter para proseguir)", Display.GREEN);
 
