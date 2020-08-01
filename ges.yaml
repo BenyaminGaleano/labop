@@ -17,8 +17,8 @@ startline: 1
 idCol: 1
 
 # es el número de columna donde se encuentra la casilla donde va la nota
-gradeCol: 4
+gradeCol: 3
 
 # es el número de columna donde va el comentario, este es necesario para anotar
 # el comentario general del siguiente campo
-commentCol: 5
+commentCol: 4
