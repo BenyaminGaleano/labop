@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Scanner;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import labop.config.ConfigParser;
@@ -92,6 +93,73 @@ public class App {
 		});
 		display.show("\n(enter)", Display.RESET);
 		scan.nextLine();
+	}
+
+	private void reflect(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios) {
+		File gesDir = new File("ges/");
+		File bindDir = new File("bind/");
+
+		if (gesDir.exists()) {
+			display.inf("Carpeta ges encontrada");
+		} else return;
+
+		if (bindDir.exists()) {
+			display.inf("Carpeta bind encontrada");
+		} else {
+			display.error("No se pudo proseguir porque no existe la carpeta bind");
+			return;
+		}
+
+		ConfigParser gesconf = null;
+		ConfigParser bindconf = null;
+
+		try {
+			gesconf = new ConfigParser("ges.yaml");
+			bindconf = new ConfigParser("bind.yaml");
+		} catch (Exception e) {
+			display.error("No se puede proseguir porque faltan los archivos de configuración");
+			return;
+		}
+
+		display.msg("Iniciando copia hacia el archivo del ges");
+
+		CSVWatcher gWatcher = new CSVWatcher(gesconf, gesDir.listFiles((file, fname) -> fname.matches(".*\\.csv")));
+		CSVWatcher bWatcher = new CSVWatcher(bindconf, bindDir.listFiles((file, fname) -> fname.matches(".*\\.csv")));
+
+		AtomicInteger count = new AtomicInteger();
+
+		LinkedList<String> calificaciones = notas.csvs.firstEntry().getValue()
+			.stream().map((row)-> row.stream()
+				.map((nst) -> Integer.parseInt(nst))
+				.reduce((a,b)-> a+b)
+				.orElseGet(()->0))
+			.map((nt)->nt.toString())
+			.collect(Collectors.toCollection(LinkedList::new));
+		LinkedList<String> comments = comentarios.csvs.firstEntry().getValue()
+			.stream().map((row)->row.get(0))
+			.collect(Collectors.toCollection(LinkedList::new));
+
+		input.consumeCSVs((student) -> {
+			int stdNum = count.getAndIncrement();
+			String carnet = student.get(input.settings.get("idCol", Integer.class)-1);
+			LinkedList<String> stbind = bWatcher.search("keyCol", carnet);
+
+			if (stbind == null) {
+				display.warning("no existe "+carnet+" en los archivos de bind");
+				return;
+			}
+			
+			TreeMap<String,String> info = new TreeMap<>();
+			info.put("gradeCol", calificaciones.get(stdNum));
+			info.put("commentCol", comments.get(stdNum));
+
+			if (gWatcher.writeAndGet(info, "idCol", stbind.get(1), "gradeCol") == null) {
+				display.warning("El alumno "+carnet+" no fue encontrado en los archivos del ges");
+			}
+		});
+
+		gWatcher.rewrite();
+		display.msg("copia terminada :)");
 	}
 
 	private void linear(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios, LinkedList<Section> trace) {
@@ -205,6 +273,7 @@ public class App {
 							log.delete();
 							close.set(true);
 							display.msg("Bien hecho " + System.getProperty("user.name") + " terminaste :3");
+							reflect(input, notas, comentarios);
 							return;
 
 						case "set":
@@ -403,6 +472,7 @@ public class App {
 							}
 							log.delete();
 							display.msg("Bien hecho " + System.getProperty("user.name") + " terminaste :3");
+							reflect(input, notas, comentarios);
 							break search;
 
 						case "set":

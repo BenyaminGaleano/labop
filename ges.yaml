@@ -1,0 +1,24 @@
+# Archivo para configuración de salida
+# autor: Josué Galeano
+
+# Este archivo es leido por un lexer y parser de YAML por lo que
+# hay que regirse al lenguaje tome en cuenta esto:
+
+# IMPORTANTE
+# - Después de una etiqueta deje un espacio (Las tabulaciones no están permitidas)
+#   llave: valor
+# - No es necesario poner comillas, pero si usar ":" para algún campo, 
+#   encierre su texto en comillas simples o dobles de lo contrario no importa
+
+# para que funcione CSVWatcher
+startline: 1
+
+# es el número de columna donde se encuentra el carnet
+idCol: 1
+
+# es el número de columna donde se encuentra la casilla donde va la nota
+gradeCol: 4
+
+# es el número de columna donde va el comentario, este es necesario para anotar
+# el comentario general del siguiente campo
+commentCol: 5
