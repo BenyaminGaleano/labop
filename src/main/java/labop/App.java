@@ -99,17 +99,6 @@ public class App {
 		File gesDir = new File("ges/");
 		File bindDir = new File("bind/");
 
-		if (gesDir.exists()) {
-			display.inf("Carpeta ges encontrada");
-		} else return;
-
-		if (bindDir.exists()) {
-			display.inf("Carpeta bind encontrada");
-		} else {
-			display.error("No se pudo proseguir porque no existe la carpeta bind");
-			return;
-		}
-
 		ConfigParser gesconf = null;
 		ConfigParser bindconf = null;
 
@@ -118,6 +107,19 @@ public class App {
 			bindconf = new ConfigParser("bind.yaml");
 		} catch (Exception e) {
 			display.error("No se puede proseguir porque faltan los archivos de configuración");
+			return;
+		}
+
+		if (gesDir.exists()) {
+			display.inf("Carpeta ges encontrada");
+		} else return;
+
+		if (!gesconf.get("glue", Boolean.class)) {
+			display.inf("Has indicado que no se necesitan archivos enlace");
+		} else if (bindDir.exists()) {
+			display.inf("Carpeta bind encontrada");
+		} else {
+			display.error("No se pudo proseguir porque no existe la carpeta bind");
 			return;
 		}
 
@@ -144,7 +146,10 @@ public class App {
 			String carnet = student.get(input.settings.get("idCol", Integer.class)-1);
 			LinkedList<String> stbind = bWatcher.search("keyCol", carnet);
 
-			if (stbind == null) {
+			if (!gWatcher.settings.get("glue", Boolean.class)) {
+				stbind = new LinkedList<>();
+				stbind.add(carnet);
+			} else if (stbind == null) {
 				display.warning("no existe "+carnet+" en los archivos de bind");
 				return;
 			}

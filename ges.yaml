@@ -13,6 +13,10 @@
 # para que funcione CSVWatcher
 startline: 1
 
+# indica si necesita de los archivos de bind si no los necesita verifique idCol contenga
+# el número de columna del carnet del estudiante
+glue: true
+
 # es el número de columna donde se encuentra el carnet
 idCol: 1
 
