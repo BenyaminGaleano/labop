@@ -7,9 +7,6 @@ import org.yaml.snakeyaml.*;
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.TreeMap;
 
 public class ConfigParser {
     private final LinkedHashMap<String, Object> settings = new LinkedHashMap<>();
