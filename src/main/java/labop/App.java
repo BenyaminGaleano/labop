@@ -624,7 +624,11 @@ public class App {
 						points = Integer.parseInt(celda.substring(startpoint, endpoint).trim());
 					}
 				}
+				if (name == null) {
+					name = sections.poll();
+				}
 				trace.add(new Section(points, name));
+				name = null;
 			}
 		}
 

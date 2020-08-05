@@ -20,7 +20,7 @@ idCol: 2
 scheme: "*) *P"
 
 # número de ejercicios 
-exercises: 5
+exercises: 16
 
 # cantidad de ejercicios por sección
-partitions: 2 2 1
+partitions: 3 2 7 3 1
