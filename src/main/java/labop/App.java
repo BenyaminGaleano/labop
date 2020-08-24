@@ -24,14 +24,11 @@ public class App {
 
 	private Display display;
 	private Scanner scan;
-	private AppMode mode;
 	private LogBuilder logBuilder;
 
-	private App(Display display, Scanner scan, AppMode mode) {
+	private App(Display display, Scanner scan) {
 		this.display = display;
 		this.scan = scan;
-		this.mode = mode;
-
 	}
 
 	private void recoveryLinear(File log, LinkedList<Section> trace) {
@@ -578,6 +575,11 @@ public class App {
 		} else {
 			notas = new CSVWatcher(outconf, notf);
 			comments = new CSVWatcher(outconf, comf);
+			System.out.println();
+			display.warning("hay archivos en la carpeta output, tenga cuidado!!");
+			display.show("Esquema de los archivos en output", Display.BLUE);
+			display.show("\n\tnotas.csv: \n\t\tfilas: "+notas.csvs.firstEntry().getValue().size()+"\n\t\tcolumnas: "+notas.csvs.firstEntry().getValue().getFirst().size()+"\n", Display.BLUE);
+			display.show("\tcomentarios.csv: \n\t\tfilas: "+comments.csvs.firstEntry().getValue().size()+"\n\t\tcolumnas: "+comments.csvs.firstEntry().getValue().getFirst().size()+"\n", Display.BLUE);
 		}
 
 		String delimiter1 = inconf.get("scheme", String.class);
@@ -632,6 +634,31 @@ public class App {
 			}
 		}
 
+		display.show("\nHerramienta auxiliar para calificar\n\n", Display.YELLOW);
+
+		display.msg("Seleccione modo de ejecución.\n\t1. Linear\n\t2. Busqueda");
+		display.show("# ", Display.BLUE);
+		
+		String op = "";
+
+		while (!(op = scan.nextLine()).matches("1|2")) {
+			display.error("sólo puede ingresar 1 o 2");
+			display.show("# ", Display.BLUE);
+		}
+
+		AppMode mode = null;
+		switch (op) {
+			case "1":
+				display.msg("Modo Lineal Activo");
+				mode = AppMode.linear;
+				break;
+
+			case "2":
+				display.msg("Modo Búsqueda Activo");
+				mode = AppMode.search;
+				break;
+		}
+
 		display.inf("el prefijo // es para comentarios");
 		display.inf("el prefijo P: es para el puntaje");
 		display.inf("el prefijo # indica consola utilice los siguientes comandos:");
@@ -668,33 +695,9 @@ public class App {
 
 		Display display = new Display(displayconf);
 
-		display.show("\nHerramienta auxiliar para calificar\n\n", Display.YELLOW);
-
-		display.msg("Seleccione modo de ejecución.\n\t1. Linear\n\t2. Busqueda");
-		display.show("# ", Display.BLUE);
-
 		Scanner scan = new Scanner(System.in);
-		String op = "";
 
-		while (!(op = scan.nextLine()).matches("1|2")) {
-			display.error("sólo puede ingresar 1 o 2");
-			display.show("# ", Display.BLUE);
-		}
-
-		AppMode mode = null;
-		switch (op) {
-			case "1":
-				display.msg("Modo Lineal Activo");
-				mode = AppMode.linear;
-				break;
-
-			case "2":
-				display.msg("Modo Búsqueda Activo");
-				mode = AppMode.search;
-				break;
-		}
-
-		App tool = new App(display, scan, mode);
+		App tool = new App(display, scan);
 		tool.start();
 
 		scan.close();
