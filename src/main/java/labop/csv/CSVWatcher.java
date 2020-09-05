@@ -2,6 +2,8 @@ package labop.csv;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -96,7 +98,9 @@ public class CSVWatcher {
         LinkedList<Integer> cols = settings.getAllCols();
         AtomicInteger max = new AtomicInteger(cols.stream().max(Integer::compare).orElse(0));
         try {
-            FileInputStream in = new FileInputStream(file);
+            FileInputStream infile = new FileInputStream(file);
+            InputStreamReader readerin = new InputStreamReader(infile, "ISO-8859-1");
+            BufferedReader in = new BufferedReader(readerin);
             StringBuffer buff = new StringBuffer();
             int aux;
 
