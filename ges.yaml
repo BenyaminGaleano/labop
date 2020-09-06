@@ -26,3 +26,10 @@ gradeCol: 3
 # es el número de columna donde va el comentario, este es necesario para anotar
 # el comentario general del siguiente campo
 commentCol: 4
+
+# El ges no soporta más de 5KB por lo que a veces los comentarios son muy grandes
+# y el ges da problemas, por eso agregar un comentario general si existen comentarios
+# en el csv
+comment: 'Ver comentarios en cuadro'
+
+maxcommentsize: 30

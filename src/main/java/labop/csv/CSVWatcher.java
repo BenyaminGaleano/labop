@@ -3,7 +3,9 @@ package labop.csv;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -99,7 +101,7 @@ public class CSVWatcher {
         AtomicInteger max = new AtomicInteger(cols.stream().max(Integer::compare).orElse(0));
         try {
             FileInputStream infile = new FileInputStream(file);
-            InputStreamReader readerin = new InputStreamReader(infile, "ISO-8859-1");
+            InputStreamReader readerin = new InputStreamReader(infile, "8859_1");
             BufferedReader in = new BufferedReader(readerin);
             StringBuffer buff = new StringBuffer();
             int aux;
@@ -147,7 +149,7 @@ public class CSVWatcher {
         return result;
     }
 
-    private byte[] toCSV(LinkedList<LinkedList<String>> inf) throws UnsupportedEncodingException {
+    private String toCSV(LinkedList<LinkedList<String>> inf) throws UnsupportedEncodingException {
         StringBuffer buff = new StringBuffer();
         String aux;
         for(LinkedList<String> list : inf){
@@ -160,7 +162,7 @@ public class CSVWatcher {
         }
         if(buff.length()>0)
             buff.deleteCharAt(buff.length()-1);
-        return buff.toString().getBytes("ISO-8859-1");
+        return buff.toString();
     }
 
     public LinkedList<String> search(String colN, String key){
@@ -212,7 +214,7 @@ public class CSVWatcher {
         csvs.forEach((file, content)->{
             try {
                 if(file.exists()) file.delete();
-                FileOutputStream stream = new FileOutputStream(file);
+                BufferedWriter stream = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "8859_1"));
                 stream.write(toCSV(content));
                 stream.close();
             } catch (IOException e) {

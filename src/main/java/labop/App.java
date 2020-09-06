@@ -3,10 +3,13 @@
  */
 package labop;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -29,6 +32,26 @@ public class App {
 	private App(Display display, Scanner scan) {
 		this.display = display;
 		this.scan = scan;
+	}
+
+	private void changeEncoding(File file) {
+		try {
+			FileInputStream infile = new FileInputStream(file);
+			InputStreamReader readerin = new InputStreamReader(infile, "ISO-8859-1");
+			BufferedReader in = new BufferedReader(readerin);
+			StringBuilder buff = new StringBuilder();
+			int aux;
+			while ((aux = in.read()) != -1)
+				buff.append((char) aux);
+			File fileRelease = new File(file.getParent()+"/"+file.getName().replaceAll("[.]csv", "")+"-SUBIR.csv");
+			if(fileRelease.exists()) fileRelease.delete();
+			FileOutputStream stream = new FileOutputStream(fileRelease);
+			stream.write(buff.toString().getBytes());
+			stream.close();
+			in.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} 
 	}
 
 	private void recoveryLinear(File log, LinkedList<Section> trace) {
@@ -93,6 +116,7 @@ public class App {
 	}
 
 	private void reflect(CSVWatcher input, CSVWatcher notas, CSVWatcher comentarios) {
+		changeEncoding(comentarios.csvs.firstKey());
 		File gesDir = new File("ges/");
 		File bindDir = new File("bind/");
 
@@ -153,7 +177,7 @@ public class App {
 			
 			TreeMap<String,String> info = new TreeMap<>();
 			info.put("gradeCol", calificaciones.get(stdNum));
-			info.put("commentCol", comments.get(stdNum));
+			info.put("commentCol", comments.get(stdNum).length() > gWatcher.settings.get("maxcommentsize", Integer.class) ? gWatcher.settings.get("comment", String.class) : comments.get(stdNum));
 
 			if (gWatcher.writeAndGet(info, "idCol", stbind.get(1), "gradeCol") == null) {
 				display.warning("El alumno "+carnet+" no fue encontrado en los archivos del ges");
@@ -161,6 +185,9 @@ public class App {
 		});
 
 		gWatcher.rewrite();
+		display.msg("cambiando codificación");
+		if(gWatcher.csvs.size() > 0)
+			changeEncoding(gWatcher.csvs.firstKey());
 		display.msg("copia terminada :)");
 	}
 
