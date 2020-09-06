@@ -29,7 +29,8 @@ commentCol: 4
 
 # El ges no soporta más de 5KB por lo que a veces los comentarios son muy grandes
 # y el ges da problemas, por eso agregar un comentario general si existen comentarios
-# en el csv
+# que sobrepasen el maxcommentsize, recuerde que debería ser más grande que 
+# el comentario en output.yaml
 comment: 'Ver comentarios en cuadro'
 
-maxcommentsize: 30
+maxcommentsize: 100
